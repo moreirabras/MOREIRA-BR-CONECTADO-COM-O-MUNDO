@@ -68,6 +68,7 @@ import { PixReconciliationModule } from './PixReconciliationModule.tsx';
 import { PayoutAlertModule } from './PayoutAlertModule.tsx';
 import { GatewayVolumeDashboard } from './GatewayVolumeDashboard.tsx';
 import { DailyLiquidityProjectionChart } from './DailyLiquidityProjectionChart.tsx';
+import { RealTimeCashFlowBacenDashboard } from './RealTimeCashFlowBacenDashboard.tsx';
 
 export type TabType = 'overview' | 'audit' | 'alerts' | 'gateways' | 'kafka' | 'fx' | 'security' | 'compliance' | 'invoice' | 'revenue' | 'golive' | 'clients' | 'checkout' | 'webhook_mgmt' | 'smtp_config' | 'conversion_accelerator' | 'pix_reconciliation' | 'payout_alerts' | 'mp_audit' | 'mp_docs';
 
@@ -774,6 +775,9 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
           <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
             {/* Banner de Sinal Verde Operacional 100% Sem Falhas */}
             <GlobalSystemOperationalStatus onOpenGlobalClients={() => setActiveTab('clients')} />
+
+            {/* Dashboard Visual de Fluxo de Caixa em Tempo Real (Recharts) vs Limites Diários Bacen 24h */}
+            <RealTimeCashFlowBacenDashboard />
 
             {/* Dashboard Visual de Volume de Transações em Tempo Real por Gateway (Mercado Pago vs. Asaas) */}
             <GatewayVolumeDashboard />
