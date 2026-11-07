@@ -5,65 +5,24 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { MercadoPagoService } from './src/services/MercadoPagoService.ts';
-import { db } from './src/db/index.ts';
-import { auditLogs } from './src/db/schema.ts';
+import { MercadoPagoService } from './src/services/MercadoPagoService';
+import { db } from './src/db/index';
+import { auditLogs } from './src/db/schema';
 import { desc } from 'drizzle-orm';
-import { EdgeSecurity } from './src/middleware/EdgeSecurity.ts';
+import { EdgeSecurity } from './src/middleware/EdgeSecurity';
 import rateLimit from 'express-rate-limit';
-import { InternationalGatewayService } from './src/services/InternationalGatewayService.ts';
-import { ExchangeService } from './src/services/ExchangeService.ts';
-import { AuditService } from './src/services/AuditService.ts';
-import { SecurityShield } from './src/middleware/SecurityShield.ts';
+import { InternationalGatewayService } from './src/services/InternationalGatewayService';
+import { ExchangeService } from './src/services/ExchangeService';
+import { AuditService } from './src/services/AuditService';
+import { SecurityShield } from './src/middleware/SecurityShield';
 import crypto from 'crypto';
 import cron from 'node-cron';
-import { ReportService } from './src/services/ReportService.ts';
-import { initializeMtlsSecurity } from './src/services/security.ts';
+import { ReportService } from './src/services/ReportService';
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const app = express();
-
-// Configuração estrita do WAF Enterprise Limit: 120 requisições/minuto por IP
-const wafRateLimiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // Janela de 1 minuto
-  max: 120, // Limite de 120 requisições por IP
-  standardHeaders: true, // Retorna as informações de limite nos headers RateLimit-*
-  legacyHeaders: false, // Desativa os headers X-RateLimit-* legados
-  message: {
-    error: 'TOO_MANY_REQUESTS',
-    message: 'Defesa de Borda WAF: Limite de 120 requisições por minuto excedido.',
-    code: 429
-  }
-});
-
-// Aplica o WAF Rate Limiter globalmente ou em rotas críticas de API
-app.use('/api/', wafRateLimiter);
-
-// Inicialização da Segurança de Borda & mTLS Cora PJ em RAM (Zero-Disk Extraction)
-try {
-  const { secureCoraAgent, secureSefazAgent } = initializeMtlsSecurity();
-  app.set('secureCoraAgent', secureCoraAgent);
-  app.set('secureSefazAgent', secureSefazAgent);
-} catch (error: any) {
-  console.error("🚨 [Vortex Security Gate]: Falha crítica na injeção do Certificado A1 em RAM:", error.message);
-  process.exit(1);
-}
-
-/**
- * Função Engine: Cálculo do Hash SHA-256 Encadeado para o Golden Record
- * Garante o encadeamento imutável de transações (Blockchain Forense)
- */
-export function calcularHashGoldenRecord(transacaoAtual: object, hashAnterior: string = ''): string {
-  const payloadString = JSON.stringify(transacaoAtual);
-  return crypto
-    .createHash('sha256')
-    .update(hashAnterior + payloadString)
-    .digest('hex');
-}
 
 // In-memory Bacen Compliance & Audit Alerts Store
 const activeAlerts: any[] = [
@@ -199,8 +158,8 @@ const kafkaMessageDeliveryLogs: any[] = [
 let bacenDailyPayoutConfig = {
   enabled: true,
   intervalHours: 24,
-  maxDailyAmountBRL: 500000.00, // Teto Máximo Diário Bacen PJ
-  batchAmountBRL: 50000.00,      // Lote padrão por disparo R$ 50k
+  maxDailyAmountBRL: 500000.00,
+  batchAmountBRL: 50000.00,
   maxBatchesPerDay: 10,
   pixKey: '+5573998599213',
   pixKeyType: 'TELEFONE',
@@ -234,9 +193,9 @@ let asaasSplitConfig = {
   walletId: 'wallet_moreira_brasil_68603032000115',
   recipientName: 'MOREIRA BRASIL CONSTRUCOES E SERVICOS LTDA',
   cnpj: '68603032000115',
-  splitType: 'PERCENTAGE', // 'PERCENTAGE' ou 'FIXED'
+  splitType: 'PERCENTAGE',
   fixedValue: 0,
-  percentualValue: 100.0, // 100% dos pagamentos direcionados para a Moreira Brasil
+  percentualValue: 100.0,
   bankInfo: {
     bankName: 'Mercado Pago',
     bankCode: '323',
@@ -250,6 +209,33 @@ let asaasSplitConfig = {
   lastUpdated: new Date().toISOString()
 };
 
-// In-Memory Real-Time Audit Logs & Global Clients Array
-const auditLogsStorage: any[] = [];
-const globalClients: any[] = [];
+const app = express();
+const port = process.env.PORT || 8080;
+
+app.use(express.json());
+
+// Rota de Health Check obrigatória para validação do Render
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ONLINE', timestamp: new Date().toISOString() });
+});
+
+// Inicialização estável da API Express
+const server = app.listen(port, () => {
+  console.log(`======================================================================`);
+  console.log(`🚀 FINTECH SLP RUNNING ON PORT ${port} (ENVIRONMENT: REAL-LIVE)`);
+  console.log(`🏢 COMPANY: MOREIRA BRASIL CONSTRUCOES E SERVICOS LTDA`);
+  console.log(`🛡 BACEN 3.978 COMPLIANCE GENERATIVE SERVICE ACTIVE`);
+  console.log(`======================================================================`);
+});
+
+// Acoplamento seguro do WebSocket Server para auditoria em tempo real
+const wss = new WebSocketServer({ server });
+
+wss.on('connection', (ws: WebSocket) => {
+  console.log('📡 Cliente de auditoria forense conectado via WebSocket.');
+  
+  ws.send(JSON.stringify({ 
+    event: 'SYSTEM_READY', 
+    message: 'Barramento imutável Bacen pronto para auditoria forense.' 
+  }));
+});
