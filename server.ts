@@ -214,7 +214,12 @@ const port = process.env.PORT || 8080;
 
 app.use(express.json());
 
-// Rota de Health Check obrigatória para validação do Render
+// Rota raiz tratada para evitar erro "Cannot GET /"
+app.get('/', (req, res) => {
+  res.status(200).send('🛡️ FINTECH SLP & CÂMBIO ERGONOMICS BACEN 3.978 - MOREIRA BRASIL LTDA ONLINE');
+});
+
+// Rota de Health Check estruturada para validação do Render
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ONLINE', timestamp: new Date().toISOString() });
 });
