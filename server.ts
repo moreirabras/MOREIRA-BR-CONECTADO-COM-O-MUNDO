@@ -214,14 +214,17 @@ const port = process.env.PORT || 8080;
 
 app.use(express.json());
 
-// Rota raiz tratada para evitar erro "Cannot GET /"
-app.get('/', (req, res) => {
-  res.status(200).send('🛡️ FINTECH SLP & CÂMBIO ERGONOMICS BACEN 3.978 - MOREIRA BRASIL LTDA ONLINE');
-});
+// 1. Mapeamento estático da pasta dist (Interface React compilada)
+app.use(express.static(path.join(__dirname, 'dist')));
 
-// Rota de Health Check estruturada para validação do Render
+// 2. Rota de Health Check estruturada para validação do Render
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ONLINE', timestamp: new Date().toISOString() });
+});
+
+// 3. Rota Curinga: Redireciona qualquer requisição de navegação visual de volta para a SPA React
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Inicialização estável da API Express
