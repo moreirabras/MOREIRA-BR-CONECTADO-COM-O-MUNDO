@@ -4,4 +4,5 @@ COPY package*.json ./
 RUN npm install --omit=dev --legacy-peer-deps
 COPY . .
 EXPOSE 8080
-CMD [ "npm", "start" ]
+CMD [ "node", "-r", "esbuild-register", "server.ts" ]
+
