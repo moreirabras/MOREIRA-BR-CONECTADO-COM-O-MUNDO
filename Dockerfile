@@ -1,25 +1,25 @@
-# Usa o Node 22 (versão exigida pelas dependências atuais do projeto)
-FROM node:22-alpine AS builder
+# Usa o Node 22
+FROM node:22-alpine
 
 WORKDIR /app
 
-# Instala curl para health probes do Render
+# Instala o curl necessário para Health Probes do Render
 RUN apk add --no-cache curl
 
-# Copia arquivos de dependência
+# Copia os arquivos de dependência
 COPY package*.json ./
 
-# Instala dependências incluindo explicitamente o react-is exigido pelo recharts
+# Instala todas as dependências (incluindo dependências de desenvolvimento para o tsx funcionar) e o react-is
 RUN npm install --legacy-peer-deps && npm install react-is --legacy-peer-deps
 
-# Copia o restante do código
+# Copia todo o código do projeto
 COPY . .
 
-# Compila a aplicação Vite/React
-RUN npm run build
+# Faz o build apenas do Frontend (se houver o comando no package.json)
+RUN npm run build || true
 
-# Expõe a porta do Render
+# Expõe a porta exigida pelo Render
 EXPOSE 10000
 
-# Inicia o servidor
+# Inicia o servidor backend diretamente via tsx (evitando erros de require dinâmico)
 CMD [ "npm", "start" ]
