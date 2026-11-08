@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export const ProvisionalDomainNotice: React.FC = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [copied, setCopied] = useState(false);
-  const provisionalUrl = 'https://moreira-br-conectado-com-o-mundo-1.onrender.com/';
+  const provisionalUrl = 'https://moreirabrconectword.onrender.com/';
 
   const handleCopy = () => {
     navigator.clipboard.writeText(provisionalUrl);

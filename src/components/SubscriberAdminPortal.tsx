@@ -24,11 +24,25 @@ import {
   ArrowRight,
   TrendingUp,
   Sliders,
-  DollarSign
+  DollarSign,
+  Users,
+  UserPlus,
+  Trash2,
+  UserCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TenantSubscriberProfile, defaultTenantProfile, MARKET_SUBSCRIPTION_PLANS } from '../services/TenantService.ts';
 import { SubscriberSignupCheckoutModule } from './SubscriberSignupCheckoutModule.tsx';
+import { FirebaseService } from '../services/firebaseService.ts';
+
+export interface TenantUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN_FINANCEIRO' | 'OPERADOR_FISCAL' | 'AUDITOR' | 'OPERADOR_PAGAMENTOS';
+  status: 'ACTIVE' | 'PENDING' | 'INACTIVE';
+  createdAt: string;
+}
 
 interface SubscriberAdminPortalProps {
   onBackToMaster?: () => void;
@@ -38,9 +52,34 @@ export const SubscriberAdminPortal: React.FC<SubscriberAdminPortalProps> = ({ on
   const [profile, setProfile] = useState<TenantSubscriberProfile>(defaultTenantProfile);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'fiscal' | 'operations' | 'billing' | 'governance'>('fiscal');
+  const [activeSubTab, setActiveSubTab] = useState<'fiscal' | 'operations' | 'billing' | 'users' | 'governance'>('fiscal');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [showSignupModal, setShowSignupModal] = useState(false);
+
+  // Tenant Users State
+  const [tenantUsers, setTenantUsers] = useState<TenantUser[]>([
+    {
+      id: 'USR-01',
+      name: 'Diretor Financeiro',
+      email: 'financeiro@alphatechglobal.com.br',
+      role: 'ADMIN_FINANCEIRO',
+      status: 'ACTIVE',
+      createdAt: '01/02/2026'
+    },
+    {
+      id: 'USR-02',
+      name: 'Contador Responsável (NF-e)',
+      email: 'fiscal@alphatechglobal.com.br',
+      role: 'OPERADOR_FISCAL',
+      status: 'ACTIVE',
+      createdAt: '15/02/2026'
+    }
+  ]);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'ADMIN_FINANCEIRO' | 'OPERADOR_FISCAL' | 'AUDITOR' | 'OPERADOR_PAGAMENTOS'>('OPERADOR_FISCAL');
+  const [newUserPass, setNewUserPass] = useState('');
+  const [addingUser, setAddingUser] = useState(false);
 
   // Test Invoice Modal / Result
   const [testingNfe, setTestingNfe] = useState(false);
@@ -211,6 +250,81 @@ export const SubscriberAdminPortal: React.FC<SubscriberAdminPortalProps> = ({ on
     setTimeout(() => setCopiedKey(null), 2500);
   };
 
+  // User Management Handlers
+  const handleCreateTenantUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserName || !newUserEmail) return;
+    setAddingUser(true);
+    try {
+      const newId = `USR-${Date.now().toString().slice(-6)}`;
+      const newUser: TenantUser = {
+        id: newId,
+        name: newUserName,
+        email: newUserEmail,
+        role: newUserRole,
+        status: 'ACTIVE',
+        createdAt: new Date().toLocaleDateString('pt-BR')
+      };
+
+      if (newUserPass && newUserPass.length >= 6) {
+        try {
+          await FirebaseService.signUp(newUserEmail, newUserPass);
+        } catch (authErr) {
+          console.warn('Firebase user register notice:', authErr);
+        }
+      }
+
+      await FirebaseService.saveUser(newId, {
+        email: newUserEmail,
+        displayName: newUserName,
+        role: newUserRole
+      });
+
+      const updated = [newUser, ...tenantUsers];
+      setTenantUsers(updated);
+      localStorage.setItem(`vortex_tenant_users_${profile.id}`, JSON.stringify(updated));
+
+      setNewUserName('');
+      setNewUserEmail('');
+      setNewUserPass('');
+      setFeedback({
+        type: 'success',
+        message: `✅ Usuário ${newUserName} (${newUserRole}) cadastrado com sucesso no tenant e sincronizado no Firestore!`
+      });
+    } catch (err: any) {
+      setFeedback({
+        type: 'error',
+        message: `Falha ao cadastrar usuário: ${err.message || 'Erro inesperado'}`
+      });
+    } finally {
+      setAddingUser(false);
+    }
+  };
+
+  const handleToggleUserStatus = (userId: string) => {
+    const updated = tenantUsers.map(u => {
+      if (u.id === userId) {
+        return {
+          ...u,
+          status: u.status === 'ACTIVE' ? ('INACTIVE' as const) : ('ACTIVE' as const)
+        };
+      }
+      return u;
+    });
+    setTenantUsers(updated);
+    localStorage.setItem(`vortex_tenant_users_${profile.id}`, JSON.stringify(updated));
+  };
+
+  const handleRemoveTenantUser = (userId: string) => {
+    const updated = tenantUsers.filter(u => u.id !== userId);
+    setTenantUsers(updated);
+    localStorage.setItem(`vortex_tenant_users_${profile.id}`, JSON.stringify(updated));
+    setFeedback({
+      type: 'success',
+      message: '✅ Usuário removido da equipe do assinante.'
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner: Tenant Isolation & Master Security Safeguard */}
@@ -353,6 +467,21 @@ export const SubscriberAdminPortal: React.FC<SubscriberAdminPortalProps> = ({ on
         </button>
 
         <button
+          onClick={() => setActiveSubTab('users')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
+            activeSubTab === 'users'
+              ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
+              : 'bg-slate-900 text-slate-300 hover:text-white border border-slate-800'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          <span>4. Gestão de Usuários & Equipe</span>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-sky-950 text-sky-300 border border-sky-500/40 font-bold">
+            {tenantUsers.length}
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('governance')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
             activeSubTab === 'governance'
@@ -361,7 +490,7 @@ export const SubscriberAdminPortal: React.FC<SubscriberAdminPortalProps> = ({ on
           }`}
         >
           <ShieldCheck className="w-4 h-4" />
-          <span>4. Salvaguarda Master & Auditoria</span>
+          <span>5. Salvaguarda Master & Auditoria</span>
         </button>
       </div>
 
@@ -1159,7 +1288,195 @@ export const SubscriberAdminPortal: React.FC<SubscriberAdminPortalProps> = ({ on
         </div>
       )}
 
-      {/* TAB 4: SALVAGUARDA MASTER & AUDITORIA */}
+      {/* TAB 4: GESTÃO DE USUÁRIOS & EQUIPE */}
+      {activeSubTab === 'users' && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                  <Users className="w-4 h-4 text-sky-400" />
+                  Usuários & Perfis da Empresa ({profile.company.razaoSocial || 'EMPRESA ASSINANTE'})
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Cadastre operadores, diretores financeiros e contadores para gerenciarem o portal da sua empresa com isolamento estrito.
+                </p>
+              </div>
+              <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                {tenantUsers.length} USUÁRIOS ATIVOS
+              </span>
+            </div>
+
+            {/* Cadastro de Novo Usuário */}
+            <div className="p-5 rounded-xl bg-slate-950 border border-slate-800 space-y-4">
+              <h4 className="text-xs font-bold text-white flex items-center gap-2 uppercase tracking-wider font-mono">
+                <UserPlus className="w-4 h-4 text-emerald-400" /> Cadastrar Novo Usuário da Empresa
+              </h4>
+
+              <form onSubmit={handleCreateTenantUser} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono">
+                <div className="space-y-1">
+                  <label className="text-slate-400">Nome Completo</label>
+                  <input
+                    type="text"
+                    required
+                    value={newUserName}
+                    onChange={(e) => setNewUserName(e.target.value)}
+                    placeholder="Ex: Mariana Castro"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-400">E-mail Corporativo</label>
+                  <input
+                    type="email"
+                    required
+                    value={newUserEmail}
+                    onChange={(e) => setNewUserEmail(e.target.value)}
+                    placeholder="mariana@empresa.com.br"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-400">Perfil de Acesso</label>
+                  <select
+                    value={newUserRole}
+                    onChange={(e) => setNewUserRole(e.target.value as any)}
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono focus:border-sky-500 focus:outline-none"
+                  >
+                    <option value="ADMIN_FINANCEIRO">Administrador Financeiro (Acesso Total)</option>
+                    <option value="OPERADOR_FISCAL">Operador Fiscal (Emissão NF-e)</option>
+                    <option value="OPERADOR_PAGAMENTOS">Operador Comercial (Checkout & Pix)</option>
+                    <option value="AUDITOR">Auditor / Conformidade (Leitura & Logs)</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-slate-400">Senha Provisória</label>
+                  <input
+                    type="password"
+                    value={newUserPass}
+                    onChange={(e) => setNewUserPass(e.target.value)}
+                    placeholder="Mínimo 6 caracteres"
+                    className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-white font-mono focus:border-sky-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2 lg:col-span-4 pt-2">
+                  <button
+                    type="submit"
+                    disabled={addingUser}
+                    className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md shadow-emerald-950/40 disabled:opacity-50"
+                  >
+                    {addingUser ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Cadastrando no Firebase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        <span>Cadastrar Usuário no Sistema</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Lista de Usuários do Tenant */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                <Users className="w-3.5 h-3.5 text-sky-400" /> Usuários Cadastrados
+              </h4>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead className="bg-slate-950 border-y border-slate-800 text-slate-400">
+                    <tr>
+                      <th className="p-3">ID / Nome</th>
+                      <th className="p-3">E-mail</th>
+                      <th className="p-3">Perfil de Acesso</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Cadastro</th>
+                      <th className="p-3 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {tenantUsers.map((user) => (
+                      <tr key={user.id} className="hover:bg-slate-950/60">
+                        <td className="p-3">
+                          <span className="text-sky-400 font-bold block">{user.id}</span>
+                          <span className="text-white font-bold">{user.name}</span>
+                        </td>
+                        <td className="p-3 text-slate-300">{user.email}</td>
+                        <td className="p-3">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-sky-300 border border-slate-700">
+                            {user.role.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            user.status === 'ACTIVE'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                          }`}>
+                            {user.status === 'ACTIVE' ? 'ATIVO' : 'INATIVO'}
+                          </span>
+                        </td>
+                        <td className="p-3 text-slate-400">{user.createdAt}</td>
+                        <td className="p-3 text-right space-x-2">
+                          <button
+                            onClick={() => handleToggleUserStatus(user.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-amber-300 hover:bg-slate-800 transition-colors cursor-pointer"
+                            title={user.status === 'ACTIVE' ? 'Desativar Usuário' : 'Ativar Usuário'}
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleRemoveTenantUser(user.id)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="Remover Usuário"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Matriz de Permissões */}
+            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono space-y-2">
+              <span className="text-slate-400 font-bold block uppercase text-[11px]">
+                Controle de Acesso Baseado em Funções (RBAC) do Tenant:
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-[11px] text-slate-400">
+                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <strong className="text-white block">ADMIN FINANCEIRO</strong>
+                  <span>Acesso completo ao faturamento, saques Pix, parametrizações e gestão de equipe.</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <strong className="text-white block">OPERADOR FISCAL</strong>
+                  <span>Emissão e validação de NF-e na SEFAZ e upload do Certificado A1 da empresa.</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <strong className="text-white block">OPERADOR COMERCIAL</strong>
+                  <span>Geração de links de checkout transparente e acompanhamento de recebimentos.</span>
+                </div>
+                <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800">
+                  <strong className="text-white block">AUDITOR</strong>
+                  <span>Visualização de logs forenses, integridade de hash e conciliação bancária.</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: SALVAGUARDA MASTER & AUDITORIA */}
       {activeSubTab === 'governance' && (
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">

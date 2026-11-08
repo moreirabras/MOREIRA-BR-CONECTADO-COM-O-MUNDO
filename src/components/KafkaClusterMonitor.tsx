@@ -431,7 +431,7 @@ export const KafkaClusterMonitor: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
-              {filteredDeliveries.map((item) => (
+              {(filteredDeliveries || []).map((item) => (
                 <tr key={item.eventId} className="hover:bg-slate-900/60 transition-colors">
                   <td className="px-4 py-3 text-slate-400 whitespace-nowrap">
                     {new Date(item.timestamp).toLocaleTimeString('pt-BR')}
@@ -478,7 +478,7 @@ export const KafkaClusterMonitor: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-mono">
-              {kafkaData?.topics.map((topic) => (
+              {(kafkaData?.topics || []).map((topic) => (
                 <tr key={topic.name} className="hover:bg-slate-900/60 transition-colors">
                   <td className="px-4 py-3 font-bold text-slate-200">{topic.name}</td>
                   <td className="px-4 py-3 text-sky-400 font-bold">{topic.partitions}</td>
@@ -506,7 +506,7 @@ export const KafkaClusterMonitor: React.FC = () => {
         </h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {kafkaData?.consumerGroups.map((cg) => (
+          {(kafkaData?.consumerGroups || []).map((cg) => (
             <div key={cg.name} className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2 font-mono text-xs">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-200 text-sm">{cg.name}</span>

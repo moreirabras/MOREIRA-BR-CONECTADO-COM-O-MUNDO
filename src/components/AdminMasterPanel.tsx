@@ -36,7 +36,8 @@ import {
   FileSpreadsheet,
   Download,
   FileText,
-  Users
+  Users,
+  Crown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { exportAuditLogsToPDF, exportAuditLogsToCSV } from '../utils/exportAuditUtils.ts';
@@ -410,12 +411,12 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight flex items-center gap-3">
-              <ShieldAlert className="w-7 h-7 text-emerald-500" />
-              Painel de Controle Admin Master Global
+            <h1 className="text-2xl font-black text-slate-100 tracking-tight flex items-center gap-3">
+              <Crown className="w-8 h-8 text-amber-400 fill-amber-400" />
+              <span>Painel do Admin Master Global · Controle Total do Sistema</span>
             </h1>
             <p className="text-xs text-slate-400 max-w-2xl">
-              Gestão centralizada do ecossistema de vendas automáticas 24/7/365 dias por ano com disponibilidade ininterrupta (SLA 99,999%). Controle de auditoria forense imutável, mensageria Kafka, gateways internacionais, câmbio BACEN e compliance SEFAZ.
+              Gestão centralizada e soberana para <strong className="text-white">Moreira Brasil (CNPJ 68.603.032/0001-15)</strong> sob comando de <strong className="text-white">Jose Silva</strong>. Controle irrestrito de vendas automáticas 24/7/365, split de pagamentos D+0, auditoria forense SHA-256, disparo de convites em massa, mensageria Kafka e conformidade Bacen 3.978.
             </p>
           </div>
 
@@ -713,8 +714,8 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
           />
           <TabButton
             id="batch_invitations"
-            label="Automação de Lotes"
-            badge="CONVITES 15D"
+            label="Central de Convites"
+            badge="AUTO & MANUAL (500)"
             icon={Users}
             active={activeTab}
             onClick={setActiveTab}
@@ -729,7 +730,7 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
             onChange={(e) => setActiveTab(e.target.value as TabType)}
             className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-bold font-mono focus:outline-none focus:border-emerald-500"
           >
-            <option value="batch_invitations">👥 Automação de Lotes (Convites & 15d Grátis)</option>
+            <option value="batch_invitations">✉️ Central de Convites (Disparo Auto & Manual - 500 Contatos)</option>
             <option value="subscriber_signup">⚡ Assinar Sistema & Planos (Checkout Pix D+0)</option>
             <option value="subscriber_portal">🏢 Portal Assinante (Tenant / Minha Empresa)</option>
             <option value="golive">🚀 Prontidão Go-Live (Audit 10/10)</option>

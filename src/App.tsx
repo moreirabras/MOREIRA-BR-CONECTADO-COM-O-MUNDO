@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Shield, TrendingUp, ShieldCheck, Lock, BellRing, FileCode2, Activity, Coins, Globe2, QrCode, Building2, Sparkles } from 'lucide-react';
+import { Shield, TrendingUp, ShieldCheck, Lock, BellRing, FileCode2, Activity, Coins, Globe2, QrCode, Building2, Sparkles, Crown, Users } from 'lucide-react';
 import { COMPANY_INFO } from './config/company.ts';
 import { AdminMasterPanel, TabType } from './components/AdminMasterPanel.tsx';
 import { GlobalSystemOperationalStatus } from './components/GlobalSystemOperationalStatus.tsx';
@@ -19,7 +19,7 @@ interface AuditLog {
 export default function App() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [_loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<TabType>('subscriber_signup');
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
 
   const fetchLogs = async () => {
     try {
@@ -63,16 +63,46 @@ export default function App() {
         
         {/* Interactive Top Navbar buttons for direct tab switching */}
         <nav className="flex flex-wrap items-center gap-1.5 text-xs font-semibold">
+          {/* Prominent Master Global Button */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('overview')}
+            className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-2 cursor-pointer font-black shadow-lg ${
+              !['subscriber_signup', 'subscriber_portal'].includes(activeTab)
+                ? 'bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 text-slate-950 ring-2 ring-emerald-300 shadow-emerald-500/30'
+                : 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-900/80'
+            }`}
+          >
+            <Crown className="w-4 h-4 text-amber-300 fill-amber-300" />
+            <span>Admin Master Global</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] bg-slate-950 text-emerald-300 font-mono font-black border border-emerald-500/40">
+              CONTROLE TOTAL
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('batch_invitations')}
+            className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'batch_invitations'
+                ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400'
+                : 'text-emerald-300 bg-emerald-950/70 border border-emerald-500/30 hover:bg-emerald-900/60'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Convites (500 Contatos)</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab('subscriber_signup')}
             className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'subscriber_signup'
                 ? 'bg-emerald-500 text-slate-950 font-black shadow-md shadow-emerald-500/20 ring-1 ring-emerald-400'
-                : 'text-emerald-300 bg-emerald-950/80 border border-emerald-500/40 hover:bg-emerald-900/60'
+                : 'text-slate-300 bg-slate-900/80 border border-slate-800 hover:bg-slate-800/80'
             }`}
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Assinar Sistema (Planos)</span>
           </button>
 
@@ -86,7 +116,7 @@ export default function App() {
             }`}
           >
             <Building2 className="w-3.5 h-3.5" />
-            <span>Painel Assinante (Minha Empresa)</span>
+            <span>Portal Assinante (Tenant)</span>
           </button>
 
           <button
@@ -227,6 +257,53 @@ export default function App() {
           <GlobalSystemOperationalStatus compact onOpenGlobalClients={() => setActiveTab('clients')} />
         </div>
       </header>
+
+      {/* Sovereign Master Control Bar */}
+      <div className="bg-slate-900/95 border-b border-emerald-500/40 px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs font-mono shadow-md">
+        <div className="flex items-center gap-3">
+          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">
+            <Crown className="w-4 h-4 text-amber-400 fill-amber-400" />
+            <span>PAINEL DO ADMIN MASTER GLOBAL · CONTROLE TOTAL ATIVO</span>
+          </span>
+          <span className="text-slate-300 hidden md:inline">
+            Titularidade Soberana: <strong className="text-white">MOREIRA BRASIL (CNPJ 68.603.032/0001-15)</strong> · Resp: <strong className="text-white">Jose Silva</strong>
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              activeTab === 'overview' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Visão Geral Master
+          </button>
+          <button
+            onClick={() => setActiveTab('batch_invitations')}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              activeTab === 'batch_invitations' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Central de Convites (500)
+          </button>
+          <button
+            onClick={() => setActiveTab('revenue')}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              activeTab === 'revenue' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Faturamento Real & SEFAZ
+          </button>
+          <button
+            onClick={() => setActiveTab('audit')}
+            className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition-all cursor-pointer ${
+              activeTab === 'audit' ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Auditoria & Backup
+          </button>
+        </div>
+      </div>
 
       <main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-8">
         {/* Banner de Status de Deploy Vercel & Local */}

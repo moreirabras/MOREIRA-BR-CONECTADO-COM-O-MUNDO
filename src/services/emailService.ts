@@ -21,16 +21,18 @@ export interface BatchInvitationEmailParams {
   language: string;
   segment?: string;
   trialDays?: number;
+  customSubject?: string;
+  customMessage?: string;
 }
 
 export const EmailService = {
   async sendBatchInvitation(params: BatchInvitationEmailParams): Promise<{ success: boolean; messageId?: string; error?: string }> {
-    const { recipientName, recipientEmail, country, language, segment, trialDays = 15 } = params;
+    const { recipientName, recipientEmail, country, language, segment, trialDays = 15, customSubject, customMessage } = params;
     
-    const subject = `Convite Oficial - Plataforma Enterprise FinTech & Auditoria (${country})`;
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; border-radius: 16px;">
-        <h2 style="color: #34d399; margin-bottom: 8px;">Olá, ${recipientName} (${recipientEmail})</h2>
+    const subject = customSubject || `Convite Oficial - Plataforma Enterprise FinTech & Auditoria (${country})`;
+    const bodyContent = customMessage 
+      ? `<p style="font-size: 14px; color: #cbd5e1; line-height: 1.6; white-space: pre-line;">${customMessage}</p>`
+      : `
         <p style="font-size: 14px; color: #cbd5e1; line-height: 1.6;">
           A <strong>${COMPANY_INFO.name}</strong> (CNPJ: ${COMPANY_INFO.cnpj}), sob a liderança de <strong>Jose Silva</strong>, tem o prazer de convidá-lo(a) para testar nossa plataforma Enterprise FinTech & Auditoria Forense com <strong>${trialDays} dias de degustação 100% gratuita</strong>.
         </p>
@@ -41,6 +43,12 @@ export const EmailService = {
         <p style="font-size: 13px; color: #cbd5e1;">
           Com este convite, sua empresa ganha acesso imediato em D+0 a emissão de NF-e própria na SEFAZ, split de pagamentos via Mercado Pago e conformidade rigorosa com a Norma Bacen 3.978.
         </p>
+      `;
+
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; background-color: #0f172a; color: #f8fafc; padding: 24px; border-radius: 16px;">
+        <h2 style="color: #34d399; margin-bottom: 8px;">Olá, ${recipientName} (${recipientEmail})</h2>
+        ${bodyContent}
         <hr style="border: none; border-top: 1px solid #334155; margin: 20px 0;" />
         <p style="font-size: 10px; color: #64748b; text-align: center;">
           Cópia de segurança enviada para: ${SMTP_CONFIG.reportRecipientEmail} | Assinatura HMAC: ${SMTP_CONFIG.signatureSecret}
