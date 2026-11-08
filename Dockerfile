@@ -3,23 +3,23 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Instala o curl necessário para Health Probes de Cloud Load Balancers e depuração
+# Instala curl para health probes do Render
 RUN apk add --no-cache curl
 
-# Copia os arquivos de dependência
+# Copia arquivos de dependência
 COPY package*.json ./
 
-# Instala todas as dependências (incluindo o react-is se já estiver no package.json)
-RUN npm install --legacy-peer-deps
+# Instala dependências incluindo explicitamente o react-is exigido pelo recharts
+RUN npm install --legacy-peer-deps && npm install react-is --legacy-peer-deps
 
-# Copia todo o código do projeto
+# Copia o restante do código
 COPY . .
 
-# Executa a compilação (Frontend / Backend) para gerar os arquivos de distribuição
+# Compila a aplicação Vite/React
 RUN npm run build
 
-# Expõe a porta padrão exigida pelo Render
+# Expõe a porta do Render
 EXPOSE 10000
 
-# Comando para iniciar o servidor (definido no package.json como "tsx server.ts" ou equivalente)
+# Inicia o servidor
 CMD [ "npm", "start" ]
