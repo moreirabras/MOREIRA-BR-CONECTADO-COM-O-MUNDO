@@ -12,6 +12,7 @@ COPY . .
 RUN npm run build
 
 # O Render define a porta automaticamente através da variável de ambiente PORT (geralmente 10000)
-EXPOSE 8080
+# Ajustado para 10000 para alinhar com o padrão exibido no log do Render
+EXPOSE 10000
 
 CMD [ "npm", "start" ]

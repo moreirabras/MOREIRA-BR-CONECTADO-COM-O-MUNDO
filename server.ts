@@ -72,7 +72,7 @@ const activeAlerts: any[] = [
 // In-memory Asaas Webhook Event Store
 const asaasWebhookLogs: any[] = [];
 
-// In-memory Mercado Pago Webhook Audit Event Store (Bacen 3.978 & D+0 Instant Settlement)
+// In-memory Mercado Pago Webhook Audit Event Store
 const mercadopagoWebhookLogs: any[] = [
   {
     id: 'MP-WH-INIT-001',
@@ -99,7 +99,7 @@ const mercadopagoWebhookLogs: any[] = [
   }
 ];
 
-// In-memory Kafka Message Delivery & Cluster Nodes Store
+// In-memory Kafka Store
 const kafkaBrokerNodes: any[] = [
   { id: 'broker-1', host: 'kafka-node-01.moreirabrasil.internal', port: 9092, role: 'CONTROLLER_LEADER', rack: 'br-east-1a', status: 'ONLINE', latencyMs: 3, partitionsHosted: 9, uptime: '365d 00h', version: '3.7.0' },
   { id: 'broker-2', host: 'kafka-node-02.moreirabrasil.internal', port: 9092, role: 'REPLICA_FOLLOWER', rack: 'br-east-1b', status: 'ONLINE', latencyMs: 4, partitionsHosted: 8, uptime: '365d 00h', version: '3.7.0' },
@@ -136,25 +136,9 @@ const kafkaMessageDeliveryLogs: any[] = [
     ackLatencyMs: 4.5,
     timestamp: new Date(Date.now() - 360000).toISOString(),
     sha256Digest: 'b09a9f2398ab012c82ff3004a8b7c3d11e002947a1198c005e8392100e479c31'
-  },
-  {
-    eventId: 'EVT-KAFKA-1003',
-    topic: 'webhooks-asaas-ingest',
-    partition: 2,
-    offset: 89312,
-    key: 'WH-ASAAS-PIX-299',
-    eventType: 'PIX_SETTLEMENT_D0',
-    priority: 'CRITICAL',
-    senderNode: 'broker-1',
-    targetConsumerGroup: 'audit-ingestor-group',
-    status: 'ACK_DELIVERED',
-    ackLatencyMs: 2.8,
-    timestamp: new Date(Date.now() - 600000).toISOString(),
-    sha256Digest: '7c4a8d09f710d2b83892339f8389102938475610293847561029384756102938'
   }
 ];
 
-// In-memory Store: Agendamento e Histórico de Disparos Automáticos de Saques Diários Bacen 24h
 let bacenDailyPayoutConfig = {
   enabled: true,
   intervalHours: 24,
@@ -188,7 +172,6 @@ const bacenDailyPayoutHistory: any[] = [
   }
 ];
 
-// Configuração Padrão do Split de Pagamento Asaas para Moreira Brasil
 let asaasSplitConfig = {
   walletId: 'wallet_moreira_brasil_68603032000115',
   recipientName: 'MOREIRA BRASIL CONSTRUCOES E SERVICOS LTDA',
@@ -210,40 +193,96 @@ let asaasSplitConfig = {
 };
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = process.env.PORT || 10000;
 
 app.use(express.json());
 
-// 1. Mapeamento estático da pasta dist (Interface React compilada)
-app.use(express.static(path.join(__dirname, 'dist')));
+const publicDirectoryPath = path.join(process.cwd(), 'dist');
+app.use(express.static(publicDirectoryPath));
 
-// 2. Rota de Health Check estruturada para validação do Render
+// ==========================================
+// 1. ROTAS DE HEALTH CHECK & STATUS
+// ==========================================
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ONLINE', timestamp: new Date().toISOString() });
+  res.status(200).json({
+    status: 'ONLINE',
+    environment: process.env.NODE_ENV || 'production',
+    compliance: 'BACEN_3978_ACTIVE',
+    timestamp: new Date().toISOString()
+  });
 });
 
-// 3. Rota Curinga: Redireciona qualquer requisição de navegação visual de volta para a SPA React
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// ==========================================
+// 2. ROTAS DE COMPLIANCE (ALERTAS BACEN)
+// ==========================================
+app.get('/api/compliance/alerts', (req, res) => {
+  res.json(activeAlerts);
 });
 
-// Inicialização estável da API Express
-const server = app.listen(port, () => {
-  console.log(`======================================================================`);
-  console.log(`🚀 FINTECH SLP RUNNING ON PORT ${port} (ENVIRONMENT: REAL-LIVE)`);
-  console.log(`🏢 COMPANY: MOREIRA BRASIL CONSTRUCOES E SERVICOS LTDA`);
-  console.log(`🛡 BACEN 3.978 COMPLIANCE GENERATIVE SERVICE ACTIVE`);
-  console.log(`======================================================================`);
+app.patch('/api/compliance/alerts/:id', (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const alertIndex = activeAlerts.findIndex(a => a.id === id);
+
+  if (alertIndex === -1) {
+    return res.status(404).json({ error: 'Alerta não encontrado' });
+  }
+
+  activeAlerts[alertIndex].status = status;
+  res.json(activeAlerts[alertIndex]);
 });
 
-// Acoplamento seguro do WebSocket Server para auditoria em tempo real
-const wss = new WebSocketServer({ server });
-
-wss.on('connection', (ws: WebSocket) => {
-  console.log('📡 Cliente de auditoria forense conectado via WebSocket.');
-  
-  ws.send(JSON.stringify({ 
-    event: 'SYSTEM_READY', 
-    message: 'Barramento imutável Bacen pronto para auditoria forense.' 
-  }));
+// ==========================================
+// 3. ROTAS DE WEBHOOKS (ASAAS & MERCADO PAGO)
+// ==========================================
+app.post('/api/webhooks/asaas', (req, res) => {
+  const logEntry = {
+    id: `ASAAS-WH-${crypto.randomUUID()}`,
+    timestamp: new Date().toISOString(),
+    payload: req.body,
+    headers: req.headers
+  };
+  asaasWebhookLogs.unshift(logEntry);
+  res.status(200).send('OK');
 });
+
+app.get('/api/webhooks/asaas/logs', (req, res) => {
+  res.json(asaasWebhookLogs);
+});
+
+app.post('/api/webhooks/mercadopago', (req, res) => {
+  const logEntry = {
+    id: `MP-WH-${crypto.randomUUID()}`,
+    timestamp: new Date().toISOString(),
+    payload: req.body,
+    signatureValid: true // Validação mockada para auditoria Bacen 3.978
+  };
+  mercadopagoWebhookLogs.unshift(logEntry);
+  res.status(200).send('OK');
+});
+
+app.get('/api/webhooks/mercadopago/logs', (req, res) => {
+  res.json(mercadopagoWebhookLogs);
+});
+
+// ==========================================
+// 4. ROTAS DE CONFIGURAÇÃO DE TRANSFERÊNCIA & SPLIT
+// ==========================================
+app.get('/api/config/payout', (req, res) => {
+  res.json(bacenDailyPayoutConfig);
+});
+
+app.put('/api/config/payout', (req, res) => {
+  bacenDailyPayoutConfig = { ...bacenDailyPayoutConfig, ...req.body, lastUpdated: new Date().toISOString() };
+  res.json(bacenDailyPayoutConfig);
+});
+
+app.get('/api/config/payout/history', (req, res) => {
+  res.json(bacenDailyPayoutHistory);
+});
+
+app.get('/api/config/split', (req, res) => {
+  res.json(asaasSplitConfig);
+});
+
+app.put('/api/config/split', (req, res) => {
