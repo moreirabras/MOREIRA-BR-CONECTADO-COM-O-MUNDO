@@ -3,6 +3,9 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Instala o curl necessário para Health Probes de Cloud Load Balancers e depuração
+RUN apk add --no-cache curl
+
 # Copia os arquivos de dependência
 COPY package*.json ./
 
@@ -12,11 +15,11 @@ RUN npm install --legacy-peer-deps
 # Copia todo o código do projeto
 COPY . .
 
-# Executa a compilação do React para gerar a pasta /app/dist necessária pelo servidor
+# Executa a compilação (Frontend / Backend) para gerar os arquivos de distribuição
 RUN npm run build
 
 # Expõe a porta padrão exigida pelo Render
 EXPOSE 10000
 
-# Comando para iniciar o servidor (definido no package.json como "tsx server.ts")
+# Comando para iniciar o servidor (definido no package.json como "tsx server.ts" ou equivalente)
 CMD [ "npm", "start" ]
