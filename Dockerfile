@@ -1,58 +1,25 @@
-# ====================================================================
-# DOCKERFILE - REQUISITO GO-LIVE 24/7/365
-# MOREIRA BRASIL CONSTRUCOES E SERVICOS LTDA (CNPJ 68.603.032/0001-15)
-# Multi-stage build para Node.js 20 + Vite + Express + SEFAZ XSD + WAF
-# ====================================================================
-
-# ----- ETAPA 1: BUILD -----
-FROM node:20-alpine AS builder
+# Usa o Node 22 (versão exigida pelas dependências atuais do projeto)
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copiar manifesto de dependências
+# Instala o curl necessário para Health Probes de Cloud Load Balancers e depuração
+RUN apk add --no-cache curl
+
+# Copia os arquivos de dependência
 COPY package*.json ./
 
-# Instalar todas as dependências (incluindo dev)
-RUN npm ci
+# Instala todas as dependências (incluindo o react-is se já estiver no package.json)
+RUN npm install --legacy-peer-deps
 
-# Copiar todo o código-fonte
+# Copia todo o código do projeto
 COPY . .
 
-# Compilar o código TypeScript / Vite SPA para a pasta dist
+# Executa a compilação (Frontend / Backend) para gerar os arquivos de distribuição
 RUN npm run build
 
-# ----- ETAPA 2: EXECUTIVE RUNTIME (HIGH AVAILABILITY) -----
-FROM node:20-alpine AS runner
+# Expõe a porta padrão exigida pelo Render
+EXPOSE 10000
 
-WORKDIR /app
-
-# Definir ambiente de produção
-ENV NODE_ENV=production
-ENV PORT=3000
-
-# Instalar curl para Health Probes de Cloud Load Balancers
-RUN apk add --no-co-cache curl
-
-# Copiar arquivos de dependências
-COPY package*.json ./
-
-# Instalar apenas dependências de produção para menor consumo de memória e boot rápido
-RUN npm ci --only=production
-
-# Copiar dist compilado e código do servidor
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.ts ./
-COPY --from=builder /app/src ./src
-
-# Expor a porta padrão 3000
-EXPOSE 3000
-
-# Health check automático para Google Cloud Run, AWS Target Groups e Kubernetes
-HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
-
-# Executar como usuário não-root por segurança bancária
-USER node
-
-# Comando de inicialização do servidor HTTP + WebSockets + WAF
-CMD ["npm", "start"]
+# Comando para iniciar o servidor (definido no package.json como "tsx server.ts" ou equivalente)
+CMD [ "npm", "start" ]
