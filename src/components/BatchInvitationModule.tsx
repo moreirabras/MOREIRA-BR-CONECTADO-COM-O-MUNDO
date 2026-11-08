@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { COMPANY_INFO } from '../config/company.ts';
-import { db } from '../services/firebaseClient.ts';
+import { db } from '../lib/firebase.ts';
 import { collection, doc, setDoc, Timestamp } from 'firebase/firestore';
 import { EmailService } from '../services/emailService.ts';
 import { INITIAL_GLOBAL_CONTACTS, Contact } from '../data/globalEnterpriseContacts.ts';
@@ -45,7 +45,12 @@ export const BatchInvitationModule: React.FC = () => {
 
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'SENT'>('ALL');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'REPLIED'>('ALL');
+
+  // Contact status & reply management modal state
+  const [managingContact, setManagingContact] = useState<Contact | null>(null);
+  const [replyTextModal, setReplyTextModal] = useState('');
+  const [newStatusModal, setNewStatusModal] = useState<Contact['status']>('DELIVERED');
 
   // High-Performance Pagination & Lazy Loading Settings
   const [displayMode, setDisplayMode] = useState<'PAGINATION' | 'LAZY'>('PAGINATION');
@@ -95,6 +100,9 @@ export const BatchInvitationModule: React.FC = () => {
       .filter(c => {
         if (statusFilter === 'PENDING') return c.status === 'PENDING';
         if (statusFilter === 'SENT') return c.status === 'SENT';
+        if (statusFilter === 'DELIVERED') return c.status === 'DELIVERED';
+        if (statusFilter === 'READ') return c.status === 'READ';
+        if (statusFilter === 'REPLIED') return c.status === 'REPLIED';
         return true;
       })
       .filter(c => {
@@ -106,7 +114,8 @@ export const BatchInvitationModule: React.FC = () => {
           c.segment.toLowerCase().includes(term) ||
           c.country.toLowerCase().includes(term) ||
           c.city.toLowerCase().includes(term) ||
-          c.phone.toLowerCase().includes(term)
+          c.phone.toLowerCase().includes(term) ||
+          (c.replyMessage && c.replyMessage.toLowerCase().includes(term))
         );
       });
   }, [contacts, statusFilter, searchTerm]);
@@ -139,6 +148,30 @@ export const BatchInvitationModule: React.FC = () => {
 
   const handleLoadMoreLazy = () => {
     setLazyLoadedCount(prev => Math.min(prev + 50, totalFiltered));
+  };
+
+  // Status badge & modal helper
+  const getStatusBadge = (status: Contact['status']) => {
+    switch (status) {
+      case 'SENT':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ENVIADO</span>;
+      case 'DELIVERED':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/30">RECEBIDO</span>;
+      case 'READ':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">LIDO</span>;
+      case 'REPLIED':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">RESPONDIDO</span>;
+      case 'FAILED':
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">FALHA</span>;
+      default:
+        return <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">AGUARDANDO</span>;
+    }
+  };
+
+  const handleOpenManageModal = (contact: Contact) => {
+    setManagingContact(contact);
+    setNewStatusModal(contact.status);
+    setReplyTextModal(contact.replyMessage || '');
   };
 
   // Handle single contact addition
@@ -249,7 +282,7 @@ export const BatchInvitationModule: React.FC = () => {
     setLogs([]);
     setCampaignCompleted(false);
 
-    const batchId = `BATCH_500_${Date.now()}`;
+    const batchId = `BATCH_ALL_${Date.now()}`;
     const total = contacts.length;
     let completed = 0;
 
@@ -418,7 +451,10 @@ export const BatchInvitationModule: React.FC = () => {
                 <option value={50}>50</option>
                 <option value={100}>100</option>
                 <option value={250}>250</option>
-                <option value={500}>500 (Todos)</option>
+                <option value={500}>500</option>
+                <option value={1000}>1000</option>
+                <option value={5000}>5000</option>
+                <option value={totalFiltered}>{totalFiltered} (Todos)</option>
               </select>
             </div>
           )}
@@ -522,7 +558,7 @@ export const BatchInvitationModule: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
-                ✓ Base Completa de 500 Contatos Carregada
+                ✓ Base Completa de {INITIAL_GLOBAL_CONTACTS.length} Contatos Carregada
               </span>
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 🎁 15 DIAS GRÁTIS D+0
@@ -583,7 +619,7 @@ export const BatchInvitationModule: React.FC = () => {
           }`}
         >
           <Upload className="w-4 h-4 text-amber-300" />
-          <span>3. Importação em Massa (500+ Contatos)</span>
+          <span>3. Importação em Massa ({contacts.length}+ Contatos)</span>
         </button>
       </div>
 
@@ -592,7 +628,7 @@ export const BatchInvitationModule: React.FC = () => {
         <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow">
           <span className="text-[10px] text-slate-400 block uppercase tracking-wider">Total na Base</span>
           <span className="text-2xl font-black text-white mt-1 block">{contacts.length}</span>
-          <span className="text-[10px] text-emerald-400 mt-0.5 block">✓ 500 Contatos Prontos</span>
+          <span className="text-[10px] text-emerald-400 mt-0.5 block">✓ {contacts.length} Contatos Prontos</span>
         </div>
         <div className="p-4 rounded-2xl bg-slate-900 border border-amber-500/30 shadow">
           <span className="text-[10px] text-amber-400 block uppercase tracking-wider">Aguardando Lote</span>
@@ -644,7 +680,9 @@ export const BatchInvitationModule: React.FC = () => {
                     <option value={50}>50 empresas / lote (Recomendado)</option>
                     <option value={100}>100 empresas / lote (Acelerado)</option>
                     <option value={250}>250 empresas / lote (Escala Alta)</option>
-                    <option value={500}>Todos os 500 contatos de uma vez</option>
+                    <option value={500}>500 empresas / lote</option>
+                    <option value={1000}>1000 empresas / lote</option>
+                    <option value={contacts.length}>Todos os {contacts.length} contatos de uma vez</option>
                   </select>
                 </div>
 
@@ -676,7 +714,7 @@ export const BatchInvitationModule: React.FC = () => {
                   ) : (
                     <>
                       <Play className="w-4 h-4 fill-current" />
-                      <span>Iniciar Disparo Automático (500 Contatos)</span>
+                      <span>Iniciar Disparo Automático ({contacts.length} Contatos)</span>
                     </>
                   )}
                 </button>
@@ -710,7 +748,7 @@ export const BatchInvitationModule: React.FC = () => {
               {campaignCompleted && (
                 <div className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-xs font-mono text-emerald-300 flex items-center gap-2">
                   <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                  <span>Campanha automatizada finalizada com sucesso! Todos os 500 registros arquivados no Firestore e notificados.</span>
+                  <span>Campanha automatizada finalizada com sucesso! Todos os {contacts.length} registros arquivados no Firestore e notificados.</span>
                 </div>
               )}
             </div>
@@ -723,7 +761,7 @@ export const BatchInvitationModule: React.FC = () => {
               </h4>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 h-56 overflow-y-auto text-[10px] text-slate-400 space-y-1.5">
                 {logs.length === 0 ? (
-                  <span className="text-slate-600 italic">Aguardando início do disparo em lote para as 500 empresas...</span>
+                  <span className="text-slate-600 italic">Aguardando início do disparo em lote para as {contacts.length} empresas...</span>
                 ) : (
                   logs.map((log, i) => (
                     <div key={i} className="text-slate-300 leading-normal border-b border-slate-900 pb-1">
@@ -792,7 +830,7 @@ export const BatchInvitationModule: React.FC = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Pesquisar entre as 500 empresas por nome, email, estado, segmento..."
+                  placeholder={`Pesquisar entre as ${contacts.length} empresas por nome, email, estado, segmento...`}
                   className="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-mono text-xs placeholder:text-slate-600 focus:outline-none focus:border-emerald-500"
                 />
               </div>
@@ -837,15 +875,24 @@ export const BatchInvitationModule: React.FC = () => {
                             <span className="text-sky-400 text-[11px]">{contact.language}</span>
                           </td>
                           <td className="p-3">
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                              contact.status === 'SENT'
-                                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                            }`}>
-                              {contact.status === 'SENT' ? 'CONVITE 15D ENVIADO' : 'AGUARDANDO LOTE'}
-                            </span>
+                            <div className="space-y-1">
+                              {getStatusBadge(contact.status)}
+                              {contact.replyMessage && (
+                                <p className="text-[10px] text-purple-300 italic bg-purple-950/40 p-1.5 rounded border border-purple-500/30">
+                                  💬 "{contact.replyMessage}"
+                                </p>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-3 text-right">
+                          <td className="p-3 text-right flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => handleOpenManageModal(contact)}
+                              className="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                              title="Atualizar status ou registrar resposta"
+                            >
+                              <Eye className="w-3 h-3" />
+                              <span>Status</span>
+                            </button>
                             <button
                               onClick={() => handleOpenManualDispatch(contact)}
                               className="px-2.5 py-1 bg-sky-500/10 hover:bg-sky-500/20 text-sky-400 border border-sky-500/30 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
@@ -1119,21 +1166,30 @@ export const BatchInvitationModule: React.FC = () => {
                               <span className="text-slate-500 text-[11px]">{contact.city} • {contact.country}</span>
                             </td>
                             <td className="p-3">
-                              <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold ${
-                                contact.status === 'SENT'
-                                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                                  : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                              }`}>
-                                {contact.status === 'SENT' ? 'ENVIADO' : 'AGUARDANDO'}
-                              </span>
+                              <div className="space-y-1">
+                                {getStatusBadge(contact.status)}
+                                {contact.replyMessage && (
+                                  <p className="text-[10px] text-purple-300 italic bg-purple-950/40 p-1.5 rounded border border-purple-500/30">
+                                    💬 "{contact.replyMessage}"
+                                  </p>
+                                )}
+                              </div>
                             </td>
-                            <td className="p-3 text-right">
+                            <td className="p-3 text-right flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenManageModal(contact)}
+                                className="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-[11px] font-bold transition-all cursor-pointer inline-flex items-center gap-1"
+                                title="Atualizar status ou registrar resposta"
+                              >
+                                <Eye className="w-3 h-3" />
+                                <span>Status</span>
+                              </button>
                               <button
                                 onClick={() => handleOpenManualDispatch(contact)}
                                 className="px-3 py-1.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-lg text-xs transition-colors cursor-pointer inline-flex items-center gap-1 shadow"
                               >
                                 <Send className="w-3.5 h-3.5" />
-                                <span>Enviar Manual</span>
+                                <span>Enviar</span>
                               </button>
                             </td>
                           </tr>
@@ -1164,7 +1220,7 @@ export const BatchInvitationModule: React.FC = () => {
                     Importador em Massa de Contatos Corporativos
                   </h3>
                 </div>
-                <span className="text-xs font-mono text-slate-400">500, 1.000 ou 5.000 contatos</span>
+                <span className="text-xs font-mono text-slate-400">Escalabilidade para {contacts.length}+ contatos</span>
               </div>
 
               {importStatus && (
@@ -1271,6 +1327,81 @@ export const BatchInvitationModule: React.FC = () => {
                   <span>Salvar na Base de Contatos</span>
                 </button>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Status & Reply Management Modal */}
+      {managingContact && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="max-w-md w-full p-6 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 font-mono text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div>
+                <span className="text-purple-400 font-bold uppercase tracking-wider text-[10px]">Gerenciar Status & Resposta</span>
+                <h3 className="text-white font-bold text-sm mt-0.5">{managingContact.name}</h3>
+                <span className="text-slate-400 text-[11px]">{managingContact.email}</span>
+              </div>
+              <button
+                onClick={() => setManagingContact(null)}
+                className="p-1 text-slate-400 hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-slate-400">Atualizar Status de Envio</label>
+                <select
+                  value={newStatusModal}
+                  onChange={(e) => setNewStatusModal(e.target.value as Contact['status'])}
+                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-mono cursor-pointer"
+                >
+                  <option value="PENDING">Aguardando na Fila</option>
+                  <option value="SENT">Convite Enviado (D+0)</option>
+                  <option value="DELIVERED">Recebido (SMTP OK)</option>
+                  <option value="READ">Lido (Aberto pelo Cliente)</option>
+                  <option value="REPLIED">Respondido (Interessado)</option>
+                  <option value="FAILED">Falha no Envio</option>
+                </select>
+              </div>
+
+              {newStatusModal === 'REPLIED' && (
+                <div className="space-y-1">
+                  <label className="text-slate-400">Resposta / Comentário do Interessado</label>
+                  <textarea
+                    rows={3}
+                    value={replyTextModal}
+                    onChange={(e) => setReplyTextModal(e.target.value)}
+                    placeholder="Ex: Ótima iniciativa da Moreira Brasil! Queremos testar a plataforma por 30 dias."
+                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-white font-mono text-xs"
+                  />
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => {
+                  setContacts(prev => prev.map(c => c.id === managingContact.id ? {
+                    ...c,
+                    status: newStatusModal,
+                    replyMessage: newStatusModal === 'REPLIED' ? (replyTextModal || c.replyMessage || 'Demonstrou interesse na proposta de degustação.') : c.replyMessage,
+                    replyTimestamp: newStatusModal === 'REPLIED' ? new Date().toISOString() : c.replyTimestamp
+                  } : c));
+                  setManagingContact(null);
+                }}
+                className="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
+              >
+                Salvar Status & Resposta
+              </button>
+              <button
+                onClick={() => setManagingContact(null)}
+                className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs cursor-pointer"
+              >
+                Cancelar
+              </button>
             </div>
           </div>
         </div>

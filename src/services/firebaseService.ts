@@ -1,4 +1,4 @@
-import { db, auth } from './firebaseClient.ts';
+import { db, auth } from '../lib/firebase.ts';
 import { collection, doc, setDoc, getDoc, getDocs, Timestamp, query, where } from 'firebase/firestore';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, UserCredential } from 'firebase/auth';
 

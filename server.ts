@@ -380,6 +380,18 @@ async function startServer() {
     res.json({ companyName: 'MOREIRA BRASIL', availableForWithdrawalD0BRL: mpBal.available, status: '100% DISPONÍVEL' });
   });
 
+  app.get('/api/payouts/bacen-daily-schedule', async (_req, res) => {
+    try {
+      const history = await db.select().from(bacenPayoutHistory).orderBy(desc(bacenPayoutHistory.timestamp)).limit(20);
+      res.json({
+        config: bacenDailyPayoutConfig,
+        history: history
+      });
+    } catch (e) {
+      res.json({ config: bacenDailyPayoutConfig, history: [] });
+    }
+  });
+
   app.get('/api/fx/rates', (_req, res) => {
     const days = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
     const rates = days.map((day) => ({
@@ -421,6 +433,18 @@ async function startServer() {
   app.patch('/api/alerts/:id', async (req, res) => {
     await db.update(alerts).set({ status: req.body.status }).where(eq(alerts.id, req.params.id));
     res.json({ success: true });
+  });
+
+  app.get('/api/webhooks/asaas/logs', async (_req, res) => {
+    try {
+      const logs = await db.select().from(auditLogs).where(eq(auditLogs.action, 'ASAAS_WEBHOOK_RECEIVED')).limit(100);
+      res.json(logs.map(log => ({
+        ...log,
+        value: Number((log.newState as any)?.amount || 0)
+      })));
+    } catch (e) {
+      res.json([]);
+    }
   });
 
   app.post('/api/communications/broadcast-welcome', async (req, res) => {

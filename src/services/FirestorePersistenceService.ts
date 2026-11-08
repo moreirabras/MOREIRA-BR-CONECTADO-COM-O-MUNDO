@@ -1,4 +1,4 @@
-import { db } from './firebaseClient.ts';
+import { db } from '../lib/firebase.ts';
 import { doc, setDoc, getDoc, collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { TenantSubscriberProfile } from './TenantService.ts';
 

@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "build": "vite build",
+    "build": "vite build && esbuild server.ts worker_audit.ts --bundle --platform=node --format=esm --outdir=dist/server --external:pg --external:kafkajs --external:express --external:vite",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
-    "start": "tsx server.ts",
-    "worker": "tsx worker_audit.ts"
+    "start": "node dist/server/server.js",
+    "worker": "node dist/server/worker_audit.js"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

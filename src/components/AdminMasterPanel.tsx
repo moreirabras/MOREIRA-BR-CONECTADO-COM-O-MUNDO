@@ -63,7 +63,7 @@ import { BacenComplianceConfigModule } from './BacenComplianceConfigModule.tsx';
 import { EncryptedBackupModule } from './EncryptedBackupModule.tsx';
 import { LiquidityHeatmapD3 } from './LiquidityHeatmapD3.tsx';
 import { SyncStatusTracker } from './SyncStatusTracker.tsx';
-import { AsaasWebhookManager } from './AsaasWebhookManager.tsx';
+import { AsaasWebhookDiagnosticCenter } from './AsaasWebhookDiagnosticCenter.tsx';
 import { SmtpConfigModule } from './SmtpConfigModule.tsx';
 import { ConversionAccelerator } from './ConversionAccelerator.tsx';
 import { PixReconciliationModule } from './PixReconciliationModule.tsx';
@@ -76,8 +76,12 @@ import { GlobalCommunicationsModule } from './GlobalCommunicationsModule.tsx';
 import { SubscriberAdminPortal } from './SubscriberAdminPortal.tsx';
 import { SubscriberSignupCheckoutModule } from './SubscriberSignupCheckoutModule.tsx';
 import { BatchInvitationModule } from './BatchInvitationModule.tsx';
+import { RechartsAuditTransactionFlowDashboard } from './RechartsAuditTransactionFlowDashboard.tsx';
+import { BacenAlertsModule } from './BacenAlertsModule.tsx';
+import { AsaasDailyCashFlowDashboard } from './AsaasDailyCashFlowDashboard.tsx';
+import { INITIAL_GLOBAL_CONTACTS } from '../data/globalEnterpriseContacts.ts';
 
-export type TabType = 'overview' | 'audit' | 'alerts' | 'gateways' | 'kafka' | 'fx' | 'security' | 'compliance' | 'invoice' | 'revenue' | 'golive' | 'clients' | 'checkout' | 'webhook_mgmt' | 'smtp_config' | 'conversion_accelerator' | 'pix_reconciliation' | 'payout_alerts' | 'mp_audit' | 'mp_docs' | 'comunicados' | 'subscriber_portal' | 'subscriber_signup' | 'batch_invitations';
+export type TabType = 'overview' | 'audit' | 'alerts' | 'gateways' | 'kafka' | 'fx' | 'security' | 'compliance' | 'invoice' | 'revenue' | 'golive' | 'clients' | 'checkout' | 'webhook_diagnostic' | 'smtp_config' | 'conversion_accelerator' | 'pix_reconciliation' | 'payout_alerts' | 'mp_audit' | 'mp_docs' | 'comunicados' | 'subscriber_portal' | 'subscriber_signup' | 'batch_invitations' | 'recharts_flow' | 'bacen_preventive' | 'asaas_cashflow';
 
 interface SystemStatus {
   status: string;
@@ -527,6 +531,30 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
         {/* Desktop & Tablet Button Grid */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
           <TabButton
+            id="asaas_cashflow"
+            label="Fluxo Asaas"
+            badge="D+0 ASAAS"
+            icon={TrendingUp}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="recharts_flow"
+            label="Dashboard Recharts (Fluxo)"
+            badge="TEMPO REAL"
+            icon={TrendingUp}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabButton
+            id="bacen_preventive"
+            label="Alertas Bacen 3.978"
+            badge="PREVENTIVO"
+            icon={ShieldAlert}
+            active={activeTab}
+            onClick={setActiveTab}
+          />
+          <TabButton
             id="subscriber_signup"
             label="Inscrição & Planos"
             badge="CHECKOUT D+0"
@@ -649,9 +677,9 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
             onClick={setActiveTab}
           />
           <TabButton
-            id="webhook_mgmt"
-            label="Gestão Webhook Asaas"
-            badge="CONFIG"
+            id="webhook_diagnostic"
+            label="Diagnóstico Webhooks Asaas"
+            badge="CONFIG & LOGS"
             icon={Webhook}
             active={activeTab}
             onClick={setActiveTab}
@@ -715,7 +743,7 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
           <TabButton
             id="batch_invitations"
             label="Central de Convites"
-            badge="AUTO & MANUAL (500)"
+            badge={`AUTO & MANUAL (${INITIAL_GLOBAL_CONTACTS.length})`}
             icon={Users}
             active={activeTab}
             onClick={setActiveTab}
@@ -730,7 +758,7 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
             onChange={(e) => setActiveTab(e.target.value as TabType)}
             className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-white font-bold font-mono focus:outline-none focus:border-emerald-500"
           >
-            <option value="batch_invitations">✉️ Central de Convites (Disparo Auto & Manual - 500 Contatos)</option>
+            <option value="batch_invitations">✉️ Central de Convites (Disparo Auto & Manual - {INITIAL_GLOBAL_CONTACTS.length} Contatos)</option>
             <option value="subscriber_signup">⚡ Assinar Sistema & Planos (Checkout Pix D+0)</option>
             <option value="subscriber_portal">🏢 Portal Assinante (Tenant / Minha Empresa)</option>
             <option value="golive">🚀 Prontidão Go-Live (Audit 10/10)</option>
@@ -793,14 +821,19 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
             <ConversionAccelerator />
           </motion.div>
         )}
+        {activeTab === 'bacen_preventive' && (
+          <motion.div key="bacen_preventive" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <BacenAlertsModule />
+          </motion.div>
+        )}
         {activeTab === 'smtp_config' && (
           <motion.div key="smtp_config" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             <SmtpConfigModule />
           </motion.div>
         )}
-        {activeTab === 'webhook_mgmt' && (
-          <motion.div key="webhook_mgmt" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            <AsaasWebhookManager />
+        {activeTab === 'webhook_diagnostic' && (
+          <motion.div key="webhook_diagnostic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <AsaasWebhookDiagnosticCenter />
           </motion.div>
         )}
         {activeTab === 'golive' && (
@@ -1269,7 +1302,6 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
           <motion.div key="gateways" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-6">
             <MercadoPagoCheckoutTransparente />
             <MercadoPagoPayoutModule availableBalanceBRL={767.38} />
-            <AsaasWebhooksDashboard />
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <GatewayCard
@@ -1461,10 +1493,23 @@ export const AdminMasterPanel: React.FC<AdminMasterProps> = ({
           <motion.div key="revenue" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
             <SyncStatusTracker />
             <RealTimeBillingDashboard />
+            <AsaasDailyCashFlowDashboard />
             <DailyLiquidityProjectionChart />
             <LiquidityHeatmapD3 />
             <FaturamentoDashboard />
             <RevenueDashboard />
+          </motion.div>
+        )}
+
+        {activeTab === 'asaas_cashflow' && (
+          <motion.div key="asaas_cashflow" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <AsaasDailyCashFlowDashboard />
+          </motion.div>
+        )}
+
+        {activeTab === 'recharts_flow' && (
+          <motion.div key="recharts_flow" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            <RechartsAuditTransactionFlowDashboard />
           </motion.div>
         )}
 

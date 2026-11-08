@@ -57,15 +57,15 @@ export const RealTimeCashFlowBacenDashboard: React.FC = () => {
 
       setHistory(payoutJson.history || []);
       
-      // Converte trendJson para CashFlowDataPoint
-      const formattedData = trendJson.map((point: any) => ({
+      // Converte trendJson para CashFlowDataPoint com segurança
+      const formattedData = Array.isArray(trendJson) ? trendJson.map((point: any) => ({
         time: point.time,
         entradasBRL: point.committed * 500, // Multiplicador para visualização se os valores forem baixos no banco vazio
         saidasBRL: 0,
         saldoAcumuladoBRL: 142850400, // Base fixa + dinâmica
         tetoDiarioBacen: 500000,
         loteDisparo: 50000
-      }));
+      })) : [];
 
       // Adiciona as saídas do histórico de payouts no gráfico se coincidirem com o tempo (simplificado)
       setData(formattedData);

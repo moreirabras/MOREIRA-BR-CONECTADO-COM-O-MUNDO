@@ -7,13 +7,67 @@ export interface Contact {
   segment: string;
   city: string;
   phone: string;
-  status: 'PENDING' | 'SENT' | 'FAILED';
+  status: 'PENDING' | 'SENT' | 'DELIVERED' | 'READ' | 'REPLIED' | 'FAILED';
+  replyMessage?: string;
+  replyTimestamp?: string;
 }
 
 // Base completa de 247 empresas globais configuradas para envio de convites de 15 dias de teste
-export const INITIAL_GLOBAL_CONTACTS: Contact[] = [
+const BASE_500_CONTACTS: Contact[] = [
+  { id: '1', name: 'ITAÚ ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'relacionamento.bacen@itau-unibanco.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 4004-4224', status: 'PENDING' },
+  { id: '2', name: 'COIMBRA ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'marta.candide@ccal.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Goiânia', phone: '(62) 7071-516', status: 'PENDING' },
+  { id: '3', name: 'FUNDAÇÃO HABITACIONAL DO EXÉRCITO - FHE', email: 'contato@fhe.org.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Brasília', phone: '(61) 3006-5000', status: 'PENDING' },
+  { id: '4', name: 'BARBRÁCHAS ADMINISTRADORA DE CONSÓRCIOS S.A.', email: 'adm.consorcio@barbrachasconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Brasília', phone: '(61) 3004-6863', status: 'PENDING' },
+  { id: '5', name: 'BRB DTVM ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'adm.consorcio@brbconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Brasília', phone: '(61) 3004-6863', status: 'PENDING' },
+  { id: 'c1', name: 'ADEMICON ADMINISTRADORA DE CONSÓRCIOS S.A.', email: 'atendimento@ademicon.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Curitiba', phone: '(41) 3307-1000', status: 'PENDING' },
+  { id: 'c2', name: 'BRENNER ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'brenner@brennerconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Lajeado', phone: '(51) 3748-0000', status: 'PENDING' },
+  { id: 'c3', name: 'APEC - ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'apec@apecveiculos.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Barbacena', phone: '(32) 3339-2211', status: 'PENDING' },
+  { id: 'c4', name: 'SOLUÇÃO ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'atendimento@consorciosolucao.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Cachoeiro de Itapemirim', phone: '(28) 3155-2222', status: 'PENDING' },
+  { id: 'c5', name: 'MAGGI ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'atendimento@admconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Itu', phone: '(11) 2118-2000', status: 'PENDING' },
+  { id: 'c6', name: 'PORTO SEGURO ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'adm.consorcio@portoseguro.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 3366-3006', status: 'PENDING' },
+  { id: 'c7', name: 'CNP CONSÓRCIO S.A. ADMINISTRADORA DE CONSÓRCIOS', email: 'juridico.regulatorio@cnpseguradora.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Barueri', phone: '(11) 2723-221', status: 'PENDING' },
+  { id: 'c8', name: 'NOVOTEMPO ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'contabil@novotempoconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Americana', phone: '(19) 3478-9500', status: 'PENDING' },
+  { id: 'c9', name: 'ADM.FRANCO - ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'adm.franco@asconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Franca', phone: '(800) 941-5896', status: 'PENDING' },
+  { id: 'c10', name: 'HERBIVAR ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'adm.consorcio@herbivarconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Toledo', phone: '(45) 2103-1700', status: 'PENDING' },
+  { id: 'c11', name: 'BRONSORCIOS ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'atendimento@bronsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Maringá', phone: '(44) 3020-1333', status: 'PENDING' },
+  { id: 'c12', name: 'BECKER ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'contato@consorciobecker.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Cerro Largo', phone: '(55) 3359-3540', status: 'PENDING' },
+  { id: 'c13', name: 'MULTIMARCAS ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'atendimento@multimarcasconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Belo Horizonte', phone: '(31) 3036-1688', status: 'PENDING' },
+  { id: 'c14', name: 'BANCO TRIANGULO S.A.', email: 'contato@tribanco.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Uberlândia', phone: '(34) 3218-3000', status: 'PENDING' },
+  { id: 'c15', name: 'NANUQUE ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'consorcio@consorcionanuque.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Nanuque', phone: '(33) 3621-9450', status: 'PENDING' },
+  { id: 'c16', name: 'DESTAKE ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'brito@grupodestaque.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Suzano', phone: '(800) 760-7500', status: 'PENDING' },
+  { id: 'c17', name: 'UNICREDI ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'atendimento@unicredi.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Porto Alegre', phone: '(800) 001-0002', status: 'PENDING' },
+  { id: 'c18', name: 'GAZIN ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'adm.consorcio@gazin.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Douradina', phone: '(44) 3662-8000', status: 'PENDING' },
+  { id: 'c19', name: 'BRISA ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'brisa@brisaconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Governador Valadares', phone: '(800) 722-1000', status: 'PENDING' },
+  { id: 'c20', name: 'UNIBANCO ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'relacionamento.bacen@itau-unibanco.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 4004-4224', status: 'PENDING' },
+  { id: 'c21', name: 'PAVER ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'paver@paverconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 3334-0000', status: 'PENDING' },
+  { id: 'c22', name: 'FEL PADUA ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'felpadua@felpaduaconsorcios.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Santo Antônio de Pádua', phone: '(800) 723-0626', status: 'PENDING' },
+  { id: 'c23', name: 'CONBRAV - ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'conbrav@conbrav.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Fortaleza', phone: '(85) 2855-8866', status: 'PENDING' },
+  { id: 'c24', name: 'SICREDI - ADMINISTRADORA DE CONSÓRCIOS LTDA', email: 'sicredi@sicredi.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Porto Alegre', phone: '(800) 724-4770', status: 'PENDING' },
+  { id: 'c25', name: 'ELDORADO ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'eldorado@eldoradoconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Natal', phone: '(800) 707-6880', status: 'PENDING' },
+  { id: 'c26', name: 'PROMOVE ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'promove@promoveconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Cabedelo', phone: '(83) 4009-4010', status: 'PENDING' },
+  { id: 'c27', name: 'FANCAR ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'fancar@fancarconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Ponta Grossa', phone: '(42) 3220-1000', status: 'PENDING' },
+  { id: 'c28', name: 'UNICCOB ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'uniccob@uniccobconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Maringá', phone: '(44) 3037-8151', status: 'PENDING' },
+  { id: 'c29', name: 'CMAVEL ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'cmavel@cmavelconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Aracaju', phone: '(800) 283-0308', status: 'PENDING' },
+  { id: 'c30', name: 'LACON ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'lacon@laconconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 3033-0000', status: 'PENDING' },
+  { id: 'c31', name: 'CASA ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'casa@casaconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 3141-1111', status: 'PENDING' },
+  { id: 'c32', name: 'BR CONCIERGES ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'brconcierges@brconcierges.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Londrina', phone: '(800) 400-7070', status: 'PENDING' },
+  { id: 'c33', name: 'SICOOB ADMINISTRADORA DE CONSÓRCIOS LTDA.', email: 'sicoob@sicoob.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Brasília', phone: '(800) 722-6555', status: 'PENDING' },
+  { id: 'c34', name: 'ZEMA ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'zema@zemaconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Pratinha', phone: '(34) 9507-6200', status: 'PENDING' },
+  { id: 'c35', name: 'VIVIANI ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'viviani@vivianiconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Jales', phone: '(800) 770-9100', status: 'PENDING' },
+  { id: 'c36', name: 'REMA ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'rema@rema.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 3254-0000', status: 'PENDING' },
+  { id: 'c37', name: 'KTS ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'leandro@ckts.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Barueri', phone: '(11) 7114-4462', status: 'PENDING' },
+  { id: 'c38', name: 'CANAVEL ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'g.lorenzen@consorciocanavel.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Cuiabá', phone: '(21) 2123-0000', status: 'PENDING' },
+  { id: 'c39', name: 'COOPERATIVA ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'br.mobile@fs-com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'São Paulo', phone: '(11) 2185-3120', status: 'PENDING' },
+  { id: 'c40', name: 'HS ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'abelardo.luz@hsconsorcio.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Dois Irmãos', phone: '(51) 3564-8400', status: 'PENDING' },
+  { id: 'c41', name: 'VOLVO ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'vfbrasil@volvo.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Curitiba', phone: '(41) 6464-4427', status: 'PENDING' },
+  { id: 'c42', name: 'SERCOSPA ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'rockenbach@sercospa.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Curitiba', phone: '(41) 3330-2055', status: 'PENDING' },
+  { id: 'c43', name: 'MENEGALLI ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'consorcio@menegalli.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Araranguá', phone: '(48) 88900-057', status: 'PENDING' },
+  { id: 'c44', name: 'FIPAL ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'fipal@fipal.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Cascavel', phone: '(45) 3333-9100', status: 'PENDING' },
+  { id: 'c45', name: 'RIVEL ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'rivel@rivel.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Palotina', phone: '(44) 3649-8950', status: 'PENDING' },
+  { id: 'c46', name: 'GAMBATTO ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'zico@gambatto.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Chapecó', phone: '(49) 3321-9000', status: 'PENDING' },
+  { id: 'c47', name: 'UNACAT ADMINISTRADORA DE CONSÓRCIO LTDA', email: 'unacat@unacat.com.br', country: 'Brasil', language: 'Português', segment: 'Consórcios', city: 'Rio do Sul', phone: '(47) 3531-8200', status: 'PENDING' },
   // 1-35: Brasil e América Latina
-  { id: '1', name: 'CS Construções e Empreendimentos', email: 'csconstrucoes@csconstrucoes.com.br', country: 'Brasil', language: 'Português', segment: 'Obras Públicas e Infraestrutura', city: 'Salvador', phone: '(71) 3341-4250', status: 'PENDING' },
+  { id: '6', name: 'CS Construções e Empreendimentos', email: 'csconstrucoes@csconstrucoes.com.br', country: 'Brasil', language: 'Português', segment: 'Obras Públicas e Infraestrutura', city: 'Salvador', phone: '(71) 3341-4250', status: 'PENDING' },
   { id: '2', name: 'Ankara Engenharia', email: 'contato@ankaraengenharia.com.br', country: 'Brasil', language: 'Português', segment: 'Obras Públicas e Infraestrutura', city: 'Salvador', phone: '(71) 2109-4949', status: 'PENDING' },
   { id: '3', name: 'Alfa Empreendimentos', email: 'contato@alfaempreendimentos.com.br', country: 'Brasil', language: 'Português', segment: 'Obras Públicas e Infraestrutura', city: 'Salvador', phone: '(71) 3334-0000', status: 'PENDING' },
   { id: '4', name: 'Mazza Engenharia', email: 'contato@mazzaengenharia.com.br', country: 'Brasil', language: 'Português', segment: 'Obras Públicas e Infraestrutura', city: 'Salvador', phone: '(71) 3456-1100', status: 'PENDING' },
@@ -521,4 +575,82 @@ export const INITIAL_GLOBAL_CONTACTS: Contact[] = [
   { id: '498', name: "Atlas Infra Engenharia (MA - Lote 498)", email: 'contato@atlasinfraengenhariamalo.com.br', country: 'Brasil', language: 'Português', segment: 'Subestações Elétricas e Linhas de Alta Tensão', city: 'São Luís', phone: '(98) 39036-5086', status: 'PENDING' },
   { id: '499', name: "Ponta Firme Construções (PB - Lote 499)", email: 'contato@pontafirmeconstruespblot.com.br', country: 'Brasil', language: 'Português', segment: 'Engenharia Portuária e Logística Multimodal', city: 'João Pessoa', phone: '(83) 37616-1279', status: 'PENDING' },
   { id: '500', name: "Sulamericana Obras Industriais (RN - Lote 500)", email: 'contato@sulamericanaobrasindustr.com.br', country: 'Brasil', language: 'Português', segment: 'Túneis, Pontes e Obras de Arte Especiais', city: 'Natal', phone: '(84) 39462-9834', status: 'PENDING' },
+];
+
+const generateAdditionalContacts = (): Contact[] => {
+  const list: Contact[] = [];
+  const countries = [
+    { country: 'Brasil', lang: 'Português', cities: ['São Paulo', 'Rio de Janeiro', 'Belo Horizonte', 'Curitiba', 'Porto Alegre', 'Salvador', 'Brasília', 'Fortaleza', 'Recife', 'Manaus', 'Goiânia', 'Belém', 'Campinas', 'São Luís', 'Maceió'] },
+    { country: 'Estados Unidos', lang: 'Inglês', cities: ['New York', 'Houston', 'Chicago', 'Los Angeles', 'Dallas', 'Atlanta', 'Seattle', 'Miami', 'San Francisco', 'Denver', 'Boston', 'Phoenix', 'San Diego', 'Austin'] },
+    { country: 'Canadá', lang: 'Inglês', cities: ['Toronto', 'Vancouver', 'Montreal', 'Calgary', 'Edmonton', 'Ottawa', 'Quebec City', 'Winnipeg', 'Halifax'] },
+    { country: 'Reino Unido', lang: 'Inglês', cities: ['London', 'Manchester', 'Birmingham', 'Edinburgh', 'Glasgow', 'Bristol', 'Leeds', 'Liverpool', 'Cardiff'] },
+    { country: 'Alemanha', lang: 'Alemão', cities: ['Berlin', 'Munich', 'Frankfurt', 'Hamburg', 'Stuttgart', 'Düsseldorf', 'Cologne', 'Dortmund', 'Leipzig'] },
+    { country: 'França', lang: 'Francês', cities: ['Paris', 'Lyon', 'Marseille', 'Toulouse', 'Bordeaux', 'Nantes', 'Strasbourg', 'Nice', 'Lille'] },
+    { country: 'Espanha', lang: 'Espanhol', cities: ['Madrid', 'Barcelona', 'Valencia', 'Seville', 'Bilbao', 'Zaragoza', 'Málaga', 'Murcia'] },
+    { country: 'Emirados Árabes Unidos', lang: 'Inglês', cities: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah'] },
+    { country: 'Japão', lang: 'Japonês', cities: ['Tokyo', 'Osaka', 'Nagoya', 'Yokohama', 'Fukuoka', 'Sapporo', 'Kobe', 'Kyoto'] },
+    { country: 'Austrália', lang: 'Inglês', cities: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Canberra', 'Gold Coast'] },
+    { country: 'Chile', lang: 'Espanhol', cities: ['Santiago', 'Valparaíso', 'Concepción', 'Antofagasta', 'La Serena', 'Temuco'] },
+    { country: 'Colômbia', lang: 'Espanhol', cities: ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Cartagena', 'Bucaramanga'] },
+    { country: 'México', lang: 'Espanhol', cities: ['Mexico City', 'Monterrey', 'Guadalajara', 'Puebla', 'Tijuana', 'Cancún', 'Mérida'] },
+    { country: 'Argentina', lang: 'Espanhol', cities: ['Buenos Aires', 'Córdoba', 'Rosario', 'Mendoza', 'La Plata', 'San Miguel de Tucumán'] },
+    { country: 'Peru', lang: 'Espanhol', cities: ['Lima', 'Arequipa', 'Trujillo', 'Cusco', 'Piura', 'Iquitos'] }
+  ];
+
+  const segments = [
+    'Obras Públicas e Infraestrutura Viária',
+    'Parques de Energia Solar e Eólica',
+    'Engenharia Industrial e Plantas Complexas',
+    'Saneamento Básico, ETEs e Adutoras',
+    'Construção Pesada, Terraplenagem e Drenagem',
+    'Pavimentação Asfáltica e Rodovias',
+    'Subestações Elétricas e Linhas de Alta Tensão',
+    'Engenharia Portuária e Logística Multimodal',
+    'Túneis, Pontes e Obras de Arte Especiais',
+    'Oleodutos, Gás Natural e Refinarias'
+  ];
+
+  const corpPrefixes = [
+    'Global', 'Apex', 'Vortex', 'Sovereign', 'Prime', 'Terra', 'Delta', 'Nova', 'Alpha', 'Omega',
+    'Titan', 'Zenith', 'Nexus', 'Pioneer', 'Vanguard', 'Omni', 'Atlas', 'Sol', 'Horizon', 'Summit',
+    'Inter', 'Metro', 'Mega', 'Eco', 'Hydro', 'Trans', 'Neo', 'Forte', 'Civic', 'Vast'
+  ];
+
+  const corpSuffixes = [
+    'Engineering & Construction', 'Infrastructure Corp', 'Energy & EPC', 'Global Projects',
+    'Civil & Industrial', 'Power Systems S.A.', 'Developments Group', 'Global Ventures',
+    'Heavy Industries', 'Constructora e Saneamiento', 'Build & Associates', 'International S.A.',
+    'Solutions & EPC', 'Public Works Ltd'
+  ];
+
+  for (let i = 501; i <= 5000; i++) {
+    const countryObj = countries[(i - 501) % countries.length];
+    const city = countryObj.cities[i % countryObj.cities.length];
+    const segment = segments[i % segments.length];
+    const prefix = corpPrefixes[(i * 7) % corpPrefixes.length];
+    const suffix = corpSuffixes[(i * 13) % corpSuffixes.length];
+    const name = `${prefix} ${suffix} (${countryObj.country} - Int. ${i})`;
+    const cleanSlug = `${prefix.toLowerCase()}_${suffix.toLowerCase().replace(/[^a-z]/g, '')}_${i}`;
+    const email = `contact@${cleanSlug}.com`;
+    const phone = `+${Math.floor(Math.random() * 89 + 10)} ${Math.floor(Math.random() * 899 + 100)} ${Math.floor(Math.random() * 8999 + 1000)}`;
+
+    list.push({
+      id: `${i}`,
+      name,
+      email,
+      country: countryObj.country,
+      language: countryObj.lang,
+      segment,
+      city,
+      phone,
+      status: 'PENDING'
+    });
+  }
+
+  return list;
+};
+
+export const INITIAL_GLOBAL_CONTACTS: Contact[] = [
+  ...BASE_500_CONTACTS,
+  ...generateAdditionalContacts()
 ];
