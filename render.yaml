@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: moreira-brasil-audit-core
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACEN_REGISTERED_CNPJ
+        fromGroup: moreira-brasil-env
+      - key: SEFAZ_ENV
+        fromGroup: moreira-brasil-env
+      - key: SEFAZ_UF_EMISSOR
+        fromGroup: moreira-brasil-env
+      - key: MERCADOPAGO_ACCESS_TOKEN
+        fromGroup: moreira-brasil-env
+      - key: MERCADOPAGO_PUBLIC_KEY
+        fromGroup: moreira-brasil-env
+      - key: MERCADOPAGO_API_URL
+        fromGroup: moreira-brasil-env
+      - key: MERCADOPAGO_WEBHOOK_SECRET
+        fromGroup: moreira-brasil-env
+      - key: STRIPE_API_KEY
+        fromGroup: moreira-brasil-env
+      - key: STRIPE_PUBLIC_KEY
+        fromGroup: moreira-brasil-env
+      - key: STRIPE_WEBHOOK_SECRET
+        fromGroup: moreira-brasil-env
+      - key: SEFAZ_CERT_PASSWORD
+        fromGroup: moreira-brasil-env
+      - key: SEFAZ_CERT_PFX_BASE64
+        fromGroup: moreira-brasil-env
+      - key: FX_AUTO_CLOSE_INTERVAL_MINUTES
+        fromGroup: moreira-brasil-env
+      - key: WAF_SECURITY_SHIELD_ENABLED
+        fromGroup: moreira-brasil-env
+      - key: RATE_LIMIT_WINDOW_MS
+        fromGroup: moreira-brasil-env
+      - key: RATE_LIMIT_MAX_REQUESTS
+        fromGroup: moreira-brasil-env
+      - key: INTEGRITY_SALT_SECRET
+        fromGroup: moreira-brasil-env
+      - key: BACKUP_ENCRYPTION_KEY
+        fromGroup: moreira-brasil-env
+      - key: ENABLE_KAFKA
+        fromGroup: moreira-brasil-env
+      - key: KAFKA_BROKERS
+        fromGroup: moreira-brasil-env
+      - key: SMTP_HOST
+        fromGroup: moreira-brasil-env
+      - key: SMTP_PORT
+        fromGroup: moreira-brasil-env
+      - key: SMTP_USER
+        fromGroup: moreira-brasil-env
+      - key: SMTP_PASS
+        fromGroup: moreira-brasil-env
+      - key: BANK_PARTNER_AUTH_TOKEN
+        fromGroup: moreira-brasil-env
